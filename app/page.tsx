@@ -2,18 +2,38 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { useSession } from 'next-auth/react'
 import { getCollection } from '@/lib/storage'
+import { getCollectionDB } from '@/lib/actions/collection'
+import UserMenu from '@/components/UserMenu'
 
 export default function Home() {
+  const { data: session, status } = useSession()
   const [collectionCount, setCollectionCount] = useState(0)
 
   useEffect(() => {
-    const collection = getCollection()
-    setCollectionCount(collection.artworks.length)
-  }, [])
+    async function loadCount() {
+      if (status === 'loading') return
+
+      if (session?.user) {
+        const dbCollection = await getCollectionDB()
+        setCollectionCount(dbCollection.artworks.length)
+      } else {
+        const collection = getCollection()
+        setCollectionCount(collection.artworks.length)
+      }
+    }
+
+    loadCount()
+  }, [session, status])
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-neutral-50 to-neutral-100 dark:from-neutral-950 dark:to-neutral-900">
+    <main className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-neutral-50 to-neutral-100 dark:from-neutral-950 dark:to-neutral-900 relative">
+      {/* User menu in top right */}
+      <div className="absolute top-4 right-4">
+        <UserMenu />
+      </div>
+
       <div className="max-w-md w-full text-center space-y-8">
         {/* Logo/Title */}
         <div className="space-y-2">

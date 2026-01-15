@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// NextAuth.js required models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts     Account[]
+  sessions     Session[]
+  collection   CollectionItem[]
+  tasteProfile TasteProfile?
+  swipeHistory SwipeEvent[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// App-specific models
+model CollectionItem {
+  id        String   @id @default(cuid())
+  userId    String
+  artworkId String
+  addedAt   DateTime @default(now())
+
+  // Denormalized artwork data for fast access
+  title        String
+  artist       String
+  year         String
+  medium       String
+  imageUrl     String
+  thumbnailUrl String
+  source       String
+  sourceUrl    String
+  department   String?
+  culture      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, artworkId])
+  @@index([userId])
+}
+
+model TasteProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+
+  preferredMediums     Json
+  preferredDepartments Json
+  preferredCultures    Json
+  favoriteArtists      Json
+  totalLiked           Int    @default(0)
+  totalSwiped          Int    @default(0)
+  summary              String @db.Text
+
+  lastUpdated DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SwipeEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  artworkId String
+  liked     Boolean
+  timestamp DateTime @default(now())
+  sessionId String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, artworkId])
+}

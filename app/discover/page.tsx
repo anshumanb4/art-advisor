@@ -2,9 +2,11 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import { Artwork } from '@/lib/types'
 import { fetchArtworks, fetchMoreArtworks } from '@/lib/api/artworks'
 import { addToCollection, addSwipeEvent } from '@/lib/storage'
+import { addToCollectionDB } from '@/lib/actions/collection'
 import { analyzeTaste } from '@/lib/tasteAnalyzer'
 import { saveTasteProfile } from '@/lib/storage'
 import ArtCard from '@/components/ArtCard'
@@ -13,18 +15,32 @@ import ActionButtons from '@/components/ActionButtons'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import InfoModal from '@/components/InfoModal'
 import FullscreenImage from '@/components/FullscreenImage'
+import SignInModal from '@/components/SignInModal'
 
 export default function DiscoverPage() {
   const router = useRouter()
+  const { data: session } = useSession()
   const [artworks, setArtworks] = useState<Artwork[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [likedArtworks, setLikedArtworks] = useState<Artwork[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [sessionId] = useState(() => Date.now().toString())
+  const [anonymousId] = useState(() => {
+    if (typeof window === 'undefined') return ''
+    let id = localStorage.getItem('art-advisor-anonymous-id')
+    if (!id) {
+      id = `anon-${Date.now()}-${Math.random().toString(36).slice(2)}`
+      localStorage.setItem('art-advisor-anonymous-id', id)
+    }
+    return id
+  })
   const [seenIds, setSeenIds] = useState<Set<string>>(new Set())
   const [infoArtwork, setInfoArtwork] = useState<Artwork | null>(null)
   const [fullscreenImage, setFullscreenImage] = useState<{ src: string; alt: string } | null>(null)
+  const [showSignInModal, setShowSignInModal] = useState(false)
+  const [hasDeclinedSignIn, setHasDeclinedSignIn] = useState(false)
+  const [pendingLikeArtwork, setPendingLikeArtwork] = useState<Artwork | null>(null)
 
   // Fetch initial artworks
   useEffect(() => {
@@ -70,6 +86,30 @@ export default function DiscoverPage() {
 
   const currentArtwork = artworks[currentIndex]
 
+  const processLike = useCallback(async (artwork: Artwork) => {
+    setLikedArtworks(prev => [...prev, artwork])
+
+    if (session?.user) {
+      // Save to database for authenticated users
+      await addToCollectionDB(artwork)
+    } else {
+      // Save to localStorage for anonymous users
+      addToCollection(artwork)
+    }
+
+    // Log to Google Sheet for analytics (fire and forget)
+    fetch('/api/log-like', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        artworkId: artwork.id,
+        artworkTitle: artwork.title,
+        sourceUrl: artwork.sourceUrl,
+        anonymousId,
+      }),
+    }).catch(() => {}) // Silently ignore errors
+  }, [session, anonymousId])
+
   const handleSwipe = useCallback((liked: boolean) => {
     if (!currentArtwork) return
 
@@ -82,14 +122,47 @@ export default function DiscoverPage() {
     })
 
     if (liked) {
-      // Add to liked artworks and collection
-      setLikedArtworks(prev => [...prev, currentArtwork])
-      addToCollection(currentArtwork)
+      // If not signed in and hasn't declined, show sign-in modal
+      if (!session?.user && !hasDeclinedSignIn) {
+        setPendingLikeArtwork(currentArtwork)
+        setShowSignInModal(true)
+        return
+      }
+
+      // Process the like
+      processLike(currentArtwork)
     }
 
     // Move to next artwork
     setCurrentIndex(prev => prev + 1)
-  }, [currentArtwork, sessionId])
+  }, [currentArtwork, sessionId, session, hasDeclinedSignIn, processLike])
+
+  const handleContinueAnonymous = useCallback(() => {
+    setHasDeclinedSignIn(true)
+    setShowSignInModal(false)
+
+    if (pendingLikeArtwork) {
+      // Save to localStorage
+      addToCollection(pendingLikeArtwork)
+      setLikedArtworks(prev => [...prev, pendingLikeArtwork])
+
+      // Log to Google Sheet for analytics
+      fetch('/api/log-like', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          artworkId: pendingLikeArtwork.id,
+          artworkTitle: pendingLikeArtwork.title,
+          sourceUrl: pendingLikeArtwork.sourceUrl,
+          anonymousId,
+        }),
+      }).catch(() => {})
+
+      setPendingLikeArtwork(null)
+      // Move to next artwork
+      setCurrentIndex(prev => prev + 1)
+    }
+  }, [pendingLikeArtwork, anonymousId])
 
   const handleDone = useCallback(() => {
     // Generate and save taste profile
@@ -234,6 +307,16 @@ export default function DiscoverPage() {
           onClose={() => setFullscreenImage(null)}
         />
       )}
+
+      {/* Sign in modal */}
+      <SignInModal
+        isOpen={showSignInModal}
+        onClose={() => {
+          setShowSignInModal(false)
+          setPendingLikeArtwork(null)
+        }}
+        onContinueAnonymous={handleContinueAnonymous}
+      />
     </main>
   )
 }

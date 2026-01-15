@@ -2,35 +2,63 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { Artwork } from '@/lib/types'
 import { getCollection, removeFromCollection, clearAllData } from '@/lib/storage'
+import { getCollectionDB, removeFromCollectionDB, clearCollectionDB } from '@/lib/actions/collection'
 
 export default function CollectionPage() {
   const router = useRouter()
+  const { data: session, status } = useSession()
   const [artworks, setArtworks] = useState<Artwork[]>([])
   const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const collection = getCollection()
-    // Sort by most recently added
-    const sorted = [...collection.artworks].sort((a, b) => {
-      const aTime = collection.addedAt[a.id] || 0
-      const bTime = collection.addedAt[b.id] || 0
-      return bTime - aTime
-    })
-    setArtworks(sorted)
-  }, [])
+    async function loadCollection() {
+      setLoading(true)
 
-  const handleRemove = (artworkId: string) => {
-    removeFromCollection(artworkId)
+      if (status === 'loading') return
+
+      if (session?.user) {
+        // Fetch from database for authenticated users
+        const dbCollection = await getCollectionDB()
+        setArtworks(dbCollection.artworks)
+      } else {
+        // Use localStorage for anonymous users
+        const collection = getCollection()
+        const sorted = [...collection.artworks].sort((a, b) => {
+          const aTime = collection.addedAt[a.id] || 0
+          const bTime = collection.addedAt[b.id] || 0
+          return bTime - aTime
+        })
+        setArtworks(sorted)
+      }
+
+      setLoading(false)
+    }
+
+    loadCollection()
+  }, [session, status])
+
+  const handleRemove = async (artworkId: string) => {
+    if (session?.user) {
+      await removeFromCollectionDB(artworkId)
+    } else {
+      removeFromCollection(artworkId)
+    }
     setArtworks(prev => prev.filter(a => a.id !== artworkId))
     setSelectedArtwork(null)
   }
 
-  const handleClearAll = () => {
+  const handleClearAll = async () => {
     if (confirm('Are you sure you want to clear your entire collection?')) {
-      clearAllData()
+      if (session?.user) {
+        await clearCollectionDB()
+      } else {
+        clearAllData()
+      }
       setArtworks([])
     }
   }
@@ -65,7 +93,11 @@ export default function CollectionPage() {
 
       {/* Content */}
       <div className="max-w-4xl mx-auto p-4">
-        {artworks.length === 0 ? (
+        {loading || status === 'loading' ? (
+          <div className="flex items-center justify-center py-16">
+            <div className="w-8 h-8 border-3 border-neutral-200 border-t-neutral-600 rounded-full animate-spin" />
+          </div>
+        ) : artworks.length === 0 ? (
           // Empty state
           <div className="text-center py-16 space-y-4">
             <div className="text-6xl">🖼️</div>
@@ -100,6 +132,7 @@ export default function CollectionPage() {
                     alt={artwork.title}
                     className="absolute inset-0 w-full h-full object-cover"
                     loading="lazy"
+                    referrerPolicy="no-referrer"
                   />
                   {/* Hover overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 hover:opacity-100 transition-opacity flex items-end p-2">
@@ -131,6 +164,7 @@ export default function CollectionPage() {
                 src={selectedArtwork.imageUrl}
                 alt={selectedArtwork.title}
                 className="absolute inset-0 w-full h-full object-contain"
+                referrerPolicy="no-referrer"
               />
             </div>
 
