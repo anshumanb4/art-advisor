@@ -1,0 +1,219 @@
+'use client'
+
+import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
+import { Artwork } from '@/lib/types'
+import { fetchArtworks, fetchMoreArtworks } from '@/lib/api/artworks'
+import { addToCollection, addSwipeEvent } from '@/lib/storage'
+import { analyzeTaste } from '@/lib/tasteAnalyzer'
+import { saveTasteProfile } from '@/lib/storage'
+import ArtCard from '@/components/ArtCard'
+import SwipeableCard from '@/components/SwipeableCard'
+import ActionButtons from '@/components/ActionButtons'
+import LoadingSpinner from '@/components/LoadingSpinner'
+import InfoModal from '@/components/InfoModal'
+
+export default function DiscoverPage() {
+  const router = useRouter()
+  const [artworks, setArtworks] = useState<Artwork[]>([])
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [likedArtworks, setLikedArtworks] = useState<Artwork[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [sessionId] = useState(() => Date.now().toString())
+  const [seenIds, setSeenIds] = useState<Set<string>>(new Set())
+  const [showInfo, setShowInfo] = useState(false)
+
+  // Fetch initial artworks
+  useEffect(() => {
+    async function loadArtworks() {
+      try {
+        setLoading(true)
+        setError(null)
+        const fetched = await fetchArtworks(30)
+        if (fetched.length === 0) {
+          setError('Unable to load artworks. Please try again.')
+        } else {
+          setArtworks(fetched)
+          setSeenIds(new Set(fetched.map(a => a.id)))
+        }
+      } catch {
+        setError('Failed to load artworks. Please check your connection.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadArtworks()
+  }, [])
+
+  // Fetch more artworks when running low
+  useEffect(() => {
+    async function loadMore() {
+      if (artworks.length - currentIndex <= 5 && artworks.length > 0) {
+        const more = await fetchMoreArtworks(seenIds, 20)
+        if (more.length > 0) {
+          setArtworks(prev => [...prev, ...more])
+          setSeenIds(prev => {
+            const newSet = new Set(prev)
+            more.forEach(a => newSet.add(a.id))
+            return newSet
+          })
+        }
+      }
+    }
+
+    loadMore()
+  }, [currentIndex, artworks.length, seenIds])
+
+  const currentArtwork = artworks[currentIndex]
+  const nextArtwork = artworks[currentIndex + 1]
+
+  const handleSwipe = useCallback((liked: boolean) => {
+    if (!currentArtwork) return
+
+    // Record swipe event
+    addSwipeEvent({
+      artworkId: currentArtwork.id,
+      liked,
+      timestamp: Date.now(),
+      sessionId,
+    })
+
+    if (liked) {
+      // Add to liked artworks and collection
+      setLikedArtworks(prev => [...prev, currentArtwork])
+      addToCollection(currentArtwork)
+    }
+
+    // Move to next artwork
+    setCurrentIndex(prev => prev + 1)
+  }, [currentArtwork, sessionId])
+
+  const handleDone = useCallback(() => {
+    // Generate and save taste profile
+    const totalSwiped = currentIndex
+    const profile = analyzeTaste(likedArtworks, totalSwiped)
+    saveTasteProfile(profile)
+
+    // Navigate to summary
+    router.push('/summary')
+  }, [currentIndex, likedArtworks, router])
+
+  if (loading) {
+    return <LoadingSpinner message="Curating artworks for you..." />
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-neutral-50 dark:bg-neutral-950">
+        <p className="text-red-500 mb-4">{error}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="px-6 py-3 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-xl font-medium"
+        >
+          Try Again
+        </button>
+      </div>
+    )
+  }
+
+  if (!currentArtwork) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-neutral-50 dark:bg-neutral-950">
+        <p className="text-neutral-600 dark:text-neutral-400 mb-4">
+          No more artworks to show
+        </p>
+        <button
+          onClick={handleDone}
+          className="px-6 py-3 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-xl font-medium"
+        >
+          View Results
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <main className="min-h-screen flex flex-col bg-white dark:bg-black">
+      {/* Header */}
+      <header className="flex items-center justify-between p-4">
+        <button
+          onClick={() => router.push('/')}
+          className="p-2 rounded-full hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-colors"
+          aria-label="Back to home"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <span className="text-sm text-neutral-500">
+          {currentIndex + 1} viewed
+        </span>
+        <div className="w-10" /> {/* Spacer for centering */}
+      </header>
+
+      {/* Card area */}
+      <div className="flex-1 relative px-4 pb-4">
+        {/* Next card (underneath) */}
+        {nextArtwork && (
+          <div className="absolute inset-x-4 top-0 bottom-0 scale-95 opacity-50 pointer-events-none">
+            <ArtCard artwork={nextArtwork} />
+          </div>
+        )}
+
+        {/* Current card */}
+        <div className="relative h-full">
+          <SwipeableCard
+            onSwipeLeft={() => handleSwipe(false)}
+            onSwipeRight={() => handleSwipe(true)}
+          >
+            <ArtCard
+              artwork={currentArtwork}
+              priority
+            />
+          </SwipeableCard>
+
+          {/* Info button - OUTSIDE swipeable area */}
+          <button
+            onClick={() => setShowInfo(true)}
+            className="absolute top-4 left-4 z-[200] w-12 h-12 rounded-full bg-white shadow-xl flex items-center justify-center hover:bg-neutral-100 active:bg-neutral-200 transition-colors border-2 border-neutral-400"
+            aria-label="View artwork info"
+          >
+            <svg
+              className="w-6 h-6 text-neutral-700"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* Action buttons */}
+      <div className="p-4 pb-8">
+        <ActionButtons
+          onPass={() => handleSwipe(false)}
+          onLike={() => handleSwipe(true)}
+          onDone={handleDone}
+          likeCount={likedArtworks.length}
+        />
+      </div>
+
+      {/* Info modal */}
+      {showInfo && currentArtwork && (
+        <InfoModal
+          artwork={currentArtwork}
+          onClose={() => setShowInfo(false)}
+        />
+      )}
+    </main>
+  )
+}

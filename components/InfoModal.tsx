@@ -1,0 +1,161 @@
+'use client'
+
+import { Artwork } from '@/lib/types'
+
+interface InfoModalProps {
+  artwork: Artwork
+  onClose: () => void
+}
+
+export default function InfoModal({ artwork, onClose }: InfoModalProps) {
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/80 flex items-end sm:items-center justify-center"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white dark:bg-neutral-900 w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl max-h-[85vh] overflow-hidden animate-slide-up"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="sticky top-0 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800 px-5 py-4 flex items-center justify-between">
+          <h2 className="font-semibold text-lg">About This Artwork</h2>
+          <button
+            onClick={onClose}
+            className="p-2 -mr-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+            aria-label="Close"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-5 space-y-5 overflow-y-auto max-h-[calc(85vh-60px)]">
+          {/* Title & Artist */}
+          <div>
+            <h3 className="text-xl font-semibold leading-tight">{artwork.title}</h3>
+            <p className="text-neutral-600 dark:text-neutral-400 mt-1">
+              {artwork.artist}
+            </p>
+            <p className="text-sm text-neutral-500 mt-0.5">
+              {artwork.year}
+            </p>
+          </div>
+
+          {/* Description */}
+          {artwork.description ? (
+            <div>
+              <h4 className="text-sm font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-2">
+                Description
+              </h4>
+              <p className="text-neutral-700 dark:text-neutral-300 leading-relaxed">
+                {artwork.description}
+              </p>
+            </div>
+          ) : (
+            <div className="bg-neutral-50 dark:bg-neutral-800 rounded-xl p-4">
+              <p className="text-neutral-500 dark:text-neutral-400 text-sm">
+                No detailed description available for this artwork. Visit the museum&apos;s website for more information.
+              </p>
+            </div>
+          )}
+
+          {/* Details grid */}
+          <div className="grid grid-cols-2 gap-4">
+            {artwork.medium && artwork.medium !== 'Unknown medium' && (
+              <div>
+                <h4 className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-1">
+                  Medium
+                </h4>
+                <p className="text-sm text-neutral-700 dark:text-neutral-300">
+                  {artwork.medium}
+                </p>
+              </div>
+            )}
+
+            {artwork.dimensions && (
+              <div>
+                <h4 className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-1">
+                  Dimensions
+                </h4>
+                <p className="text-sm text-neutral-700 dark:text-neutral-300">
+                  {artwork.dimensions}
+                </p>
+              </div>
+            )}
+
+            {artwork.classification && (
+              <div>
+                <h4 className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-1">
+                  Classification
+                </h4>
+                <p className="text-sm text-neutral-700 dark:text-neutral-300">
+                  {artwork.classification}
+                </p>
+              </div>
+            )}
+
+            {artwork.culture && (
+              <div>
+                <h4 className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-1">
+                  Origin
+                </h4>
+                <p className="text-sm text-neutral-700 dark:text-neutral-300">
+                  {artwork.culture}
+                </p>
+              </div>
+            )}
+
+            {artwork.department && (
+              <div>
+                <h4 className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-1">
+                  Department
+                </h4>
+                <p className="text-sm text-neutral-700 dark:text-neutral-300">
+                  {artwork.department}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Credit line */}
+          {artwork.creditLine && (
+            <div className="pt-2 border-t border-neutral-200 dark:border-neutral-800">
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                {artwork.creditLine}
+              </p>
+            </div>
+          )}
+
+          {/* Source link */}
+          <a
+            href={artwork.sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block w-full py-3 px-4 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-xl font-medium text-center hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors"
+          >
+            View on {artwork.source === 'met' ? 'Met Museum' : 'Art Institute Chicago'}
+          </a>
+        </div>
+      </div>
+
+      <style jsx>{`
+        @keyframes slide-up {
+          from {
+            transform: translateY(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateY(0);
+            opacity: 1;
+          }
+        }
+        .animate-slide-up {
+          animation: slide-up 0.3s ease-out;
+        }
+      `}</style>
+    </div>
+  )
+}
