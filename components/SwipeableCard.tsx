@@ -56,11 +56,6 @@ export default function SwipeableCard({
 
   // Calculate rotation based on horizontal offset
   const rotation = offset.x * 0.05
-  const opacity = Math.max(0, 1 - Math.abs(offset.x) / 500)
-
-  // Determine overlay color based on swipe direction
-  const showLikeOverlay = offset.x > 30
-  const showPassOverlay = offset.x < -30
 
   // Animation for leaving
   const leaveTransform = isLeaving
@@ -75,30 +70,10 @@ export default function SwipeableCard({
       className="relative w-full h-full select-none cursor-grab active:cursor-grabbing"
       style={{
         transform: leaveTransform,
-        opacity: isLeaving ? 0 : opacity,
+        opacity: isLeaving ? 0 : 1,
         transition: isLeaving || offset.x === 0 ? 'all 0.2s ease-out' : 'none',
       }}
     >
-      {/* Like overlay - low z-index so buttons stay clickable */}
-      <div
-        className="absolute inset-0 bg-green-500/30 rounded-2xl z-10 flex items-center justify-center pointer-events-none transition-opacity"
-        style={{ opacity: showLikeOverlay ? Math.min((offset.x - 30) / 100, 1) : 0 }}
-      >
-        <div className="bg-green-500 text-white px-6 py-3 rounded-xl font-bold text-2xl transform -rotate-12 border-4 border-white">
-          LIKE
-        </div>
-      </div>
-
-      {/* Pass overlay - low z-index so buttons stay clickable */}
-      <div
-        className="absolute inset-0 bg-red-500/30 rounded-2xl z-10 flex items-center justify-center pointer-events-none transition-opacity"
-        style={{ opacity: showPassOverlay ? Math.min((-offset.x - 30) / 100, 1) : 0 }}
-      >
-        <div className="bg-red-500 text-white px-6 py-3 rounded-xl font-bold text-2xl transform rotate-12 border-4 border-white">
-          PASS
-        </div>
-      </div>
-
       {children}
     </div>
   )

@@ -22,7 +22,7 @@ export default function DiscoverPage() {
   const [error, setError] = useState<string | null>(null)
   const [sessionId] = useState(() => Date.now().toString())
   const [seenIds, setSeenIds] = useState<Set<string>>(new Set())
-  const [showInfo, setShowInfo] = useState(false)
+  const [infoArtwork, setInfoArtwork] = useState<Artwork | null>(null)
 
   // Fetch initial artworks
   useEffect(() => {
@@ -67,7 +67,6 @@ export default function DiscoverPage() {
   }, [currentIndex, artworks.length, seenIds])
 
   const currentArtwork = artworks[currentIndex]
-  const nextArtwork = artworks[currentIndex + 1]
 
   const handleSwipe = useCallback((liked: boolean) => {
     if (!currentArtwork) return
@@ -100,17 +99,24 @@ export default function DiscoverPage() {
     router.push('/summary')
   }, [currentIndex, likedArtworks, router])
 
+  // Handle info button - capture current artwork immediately
+  const handleInfoClick = useCallback(() => {
+    if (currentArtwork) {
+      setInfoArtwork(currentArtwork)
+    }
+  }, [currentArtwork])
+
   if (loading) {
     return <LoadingSpinner message="Curating artworks for you..." />
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-neutral-50 dark:bg-neutral-950">
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-white">
         <p className="text-red-500 mb-4">{error}</p>
         <button
           onClick={() => window.location.reload()}
-          className="px-6 py-3 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-xl font-medium"
+          className="px-6 py-3 bg-neutral-900 text-white rounded-xl font-medium"
         >
           Try Again
         </button>
@@ -120,13 +126,13 @@ export default function DiscoverPage() {
 
   if (!currentArtwork) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-neutral-50 dark:bg-neutral-950">
-        <p className="text-neutral-600 dark:text-neutral-400 mb-4">
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-white">
+        <p className="text-neutral-600 mb-4">
           No more artworks to show
         </p>
         <button
           onClick={handleDone}
-          className="px-6 py-3 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-xl font-medium"
+          className="px-6 py-3 bg-neutral-900 text-white rounded-xl font-medium"
         >
           View Results
         </button>
@@ -135,12 +141,12 @@ export default function DiscoverPage() {
   }
 
   return (
-    <main className="min-h-screen flex flex-col bg-white dark:bg-black">
+    <main className="min-h-screen flex flex-col bg-white">
       {/* Header */}
       <header className="flex items-center justify-between p-4">
         <button
           onClick={() => router.push('/')}
-          className="p-2 rounded-full hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-colors"
+          className="p-2 rounded-full hover:bg-neutral-200 transition-colors"
           aria-label="Back to home"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -150,19 +156,11 @@ export default function DiscoverPage() {
         <span className="text-sm text-neutral-500">
           {currentIndex + 1} viewed
         </span>
-        <div className="w-10" /> {/* Spacer for centering */}
+        <div className="w-10" />
       </header>
 
-      {/* Card area */}
+      {/* Card area - no preview card behind */}
       <div className="flex-1 relative px-4 pb-4">
-        {/* Next card (underneath) */}
-        {nextArtwork && (
-          <div className="absolute inset-x-4 top-0 bottom-0 scale-95 opacity-50 pointer-events-none">
-            <ArtCard artwork={nextArtwork} />
-          </div>
-        )}
-
-        {/* Current card */}
         <div className="relative h-full">
           <SwipeableCard
             onSwipeLeft={() => handleSwipe(false)}
@@ -176,7 +174,7 @@ export default function DiscoverPage() {
 
           {/* Info button - OUTSIDE swipeable area */}
           <button
-            onClick={() => setShowInfo(true)}
+            onClick={handleInfoClick}
             className="absolute top-4 left-4 z-[200] w-12 h-12 rounded-full bg-white shadow-xl flex items-center justify-center hover:bg-neutral-100 active:bg-neutral-200 transition-colors border-2 border-neutral-400"
             aria-label="View artwork info"
           >
@@ -207,11 +205,11 @@ export default function DiscoverPage() {
         />
       </div>
 
-      {/* Info modal */}
-      {showInfo && currentArtwork && (
+      {/* Info modal - uses captured artwork, not currentArtwork */}
+      {infoArtwork && (
         <InfoModal
-          artwork={currentArtwork}
-          onClose={() => setShowInfo(false)}
+          artwork={infoArtwork}
+          onClose={() => setInfoArtwork(null)}
         />
       )}
     </main>

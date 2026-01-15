@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Artwork } from '@/lib/types'
-import { getCollection, removeFromCollection } from '@/lib/storage'
+import { getCollection, removeFromCollection, clearAllData } from '@/lib/storage'
 
 export default function CollectionPage() {
   const router = useRouter()
@@ -28,14 +28,21 @@ export default function CollectionPage() {
     setSelectedArtwork(null)
   }
 
+  const handleClearAll = () => {
+    if (confirm('Are you sure you want to clear your entire collection?')) {
+      clearAllData()
+      setArtworks([])
+    }
+  }
+
   return (
-    <main className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
+    <main className="min-h-screen bg-white">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-neutral-50/80 dark:bg-neutral-950/80 backdrop-blur-lg border-b border-neutral-200 dark:border-neutral-800">
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-lg border-b border-neutral-200">
         <div className="flex items-center justify-between p-4 max-w-4xl mx-auto">
           <button
             onClick={() => router.push('/')}
-            className="p-2 -ml-2 rounded-full hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-colors"
+            className="p-2 -ml-2 rounded-full hover:bg-neutral-200 transition-colors"
             aria-label="Back to home"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -43,7 +50,16 @@ export default function CollectionPage() {
             </svg>
           </button>
           <h1 className="font-semibold">My Collection</h1>
-          <div className="w-10" />
+          {artworks.length > 0 ? (
+            <button
+              onClick={handleClearAll}
+              className="text-sm text-red-500 hover:text-red-700"
+            >
+              Clear All
+            </button>
+          ) : (
+            <div className="w-10" />
+          )}
         </div>
       </header>
 
