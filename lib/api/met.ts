@@ -102,7 +102,7 @@ export async function fetchMetArtworks(count: number = 30): Promise<Artwork[]> {
   }
 
   // Shuffle and deduplicate
-  const shuffled = [...new Set(allIds)].sort(() => Math.random() - 0.5)
+  const shuffled = Array.from(new Set(allIds)).sort(() => Math.random() - 0.5)
 
   // Fetch objects until we have enough
   for (const id of shuffled) {
