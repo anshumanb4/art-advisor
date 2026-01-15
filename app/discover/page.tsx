@@ -12,6 +12,7 @@ import SwipeableCard from '@/components/SwipeableCard'
 import ActionButtons from '@/components/ActionButtons'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import InfoModal from '@/components/InfoModal'
+import FullscreenImage from '@/components/FullscreenImage'
 
 export default function DiscoverPage() {
   const router = useRouter()
@@ -23,6 +24,7 @@ export default function DiscoverPage() {
   const [sessionId] = useState(() => Date.now().toString())
   const [seenIds, setSeenIds] = useState<Set<string>>(new Set())
   const [infoArtwork, setInfoArtwork] = useState<Artwork | null>(null)
+  const [fullscreenImage, setFullscreenImage] = useState<{ src: string; alt: string } | null>(null)
 
   // Fetch initial artworks
   useEffect(() => {
@@ -106,6 +108,16 @@ export default function DiscoverPage() {
     }
   }, [currentArtwork])
 
+  // Handle image tap for fullscreen
+  const handleImageTap = useCallback(() => {
+    if (currentArtwork) {
+      setFullscreenImage({
+        src: currentArtwork.imageUrl,
+        alt: `${currentArtwork.title} by ${currentArtwork.artist}`,
+      })
+    }
+  }, [currentArtwork])
+
   if (loading) {
     return <LoadingSpinner message="Curating artworks for you..." />
   }
@@ -165,6 +177,7 @@ export default function DiscoverPage() {
           <SwipeableCard
             onSwipeLeft={() => handleSwipe(false)}
             onSwipeRight={() => handleSwipe(true)}
+            onTap={handleImageTap}
           >
             <ArtCard
               artwork={currentArtwork}
@@ -210,6 +223,15 @@ export default function DiscoverPage() {
         <InfoModal
           artwork={infoArtwork}
           onClose={() => setInfoArtwork(null)}
+        />
+      )}
+
+      {/* Fullscreen image modal */}
+      {fullscreenImage && (
+        <FullscreenImage
+          src={fullscreenImage.src}
+          alt={fullscreenImage.alt}
+          onClose={() => setFullscreenImage(null)}
         />
       )}
     </main>

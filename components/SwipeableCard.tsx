@@ -1,12 +1,13 @@
 'use client'
 
 import { useSwipeable } from 'react-swipeable'
-import { useState, ReactNode } from 'react'
+import { useState, useRef, ReactNode } from 'react'
 
 interface SwipeableCardProps {
   children: ReactNode
   onSwipeLeft: () => void
   onSwipeRight: () => void
+  onTap?: () => void
   disabled?: boolean
 }
 
@@ -14,14 +15,17 @@ export default function SwipeableCard({
   children,
   onSwipeLeft,
   onSwipeRight,
+  onTap,
   disabled = false,
 }: SwipeableCardProps) {
   const [offset, setOffset] = useState({ x: 0, y: 0 })
   const [isLeaving, setIsLeaving] = useState<'left' | 'right' | null>(null)
+  const hasMoved = useRef(false)
 
   const handlers = useSwipeable({
     onSwiping: (e) => {
       if (disabled) return
+      hasMoved.current = true
       setOffset({ x: e.deltaX, y: e.deltaY * 0.3 })
     },
     onSwipedLeft: () => {
@@ -42,9 +46,16 @@ export default function SwipeableCard({
         setIsLeaving(null)
       }, 200)
     },
+    onTouchStartOrOnMouseDown: () => {
+      hasMoved.current = false
+    },
     onTouchEndOrOnMouseUp: () => {
       if (!isLeaving) {
         setOffset({ x: 0, y: 0 })
+      }
+      // Detect tap: no significant movement occurred
+      if (!hasMoved.current && onTap && !disabled) {
+        onTap()
       }
     },
     trackMouse: true,

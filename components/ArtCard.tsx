@@ -54,6 +54,7 @@ export default function ArtCard({ artwork, priority = false }: ArtCardProps) {
           loading={priority ? 'eager' : 'lazy'}
           onLoad={() => setImageLoaded(true)}
           onError={() => setImageError(true)}
+          referrerPolicy="no-referrer"
         />
       )}
 

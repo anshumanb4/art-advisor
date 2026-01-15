@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { Artwork } from '@/lib/types'
 
 interface InfoModalProps {
@@ -7,7 +8,39 @@ interface InfoModalProps {
   onClose: () => void
 }
 
+interface ArtworkInfo {
+  summary: string | null
+  source?: string
+  message?: string
+}
+
 export default function InfoModal({ artwork, onClose }: InfoModalProps) {
+  const [artworkInfo, setArtworkInfo] = useState<ArtworkInfo | null>(null)
+  const [loadingInfo, setLoadingInfo] = useState(false)
+
+  useEffect(() => {
+    async function fetchArtworkInfo() {
+      setLoadingInfo(true)
+      try {
+        const params = new URLSearchParams({
+          title: artwork.title,
+          artist: artwork.artist,
+        })
+        const response = await fetch(`/api/artwork-info?${params}`)
+        if (response.ok) {
+          const data = await response.json()
+          setArtworkInfo(data)
+        }
+      } catch {
+        // Silently fail - we'll just not show the section
+      } finally {
+        setLoadingInfo(false)
+      }
+    }
+
+    fetchArtworkInfo()
+  }, [artwork.title, artwork.artist])
+
   return (
     <div
       className="fixed inset-0 z-50 bg-black/80 flex items-end sm:items-center justify-center"
@@ -61,6 +94,38 @@ export default function InfoModal({ artwork, onClose }: InfoModalProps) {
               </p>
             </div>
           )}
+
+          {/* Story / Additional Info */}
+          <div>
+            <h4 className="text-sm font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-2">
+              The Story Behind the Work
+            </h4>
+            {loadingInfo ? (
+              <div className="bg-neutral-50 dark:bg-neutral-800 rounded-xl p-4 flex items-center gap-3">
+                <div className="w-4 h-4 border-2 border-neutral-300 dark:border-neutral-600 border-t-neutral-600 dark:border-t-neutral-300 rounded-full animate-spin" />
+                <p className="text-neutral-500 dark:text-neutral-400 text-sm">
+                  Searching for more information...
+                </p>
+              </div>
+            ) : artworkInfo?.summary ? (
+              <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-xl p-4 border border-amber-200/50 dark:border-amber-800/30">
+                <p className="text-neutral-700 dark:text-neutral-300 leading-relaxed text-sm">
+                  {artworkInfo.summary}
+                </p>
+                {artworkInfo.source && (
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">
+                    Source: {artworkInfo.source}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="bg-neutral-50 dark:bg-neutral-800 rounded-xl p-4">
+                <p className="text-neutral-500 dark:text-neutral-400 text-sm">
+                  {artworkInfo?.message || 'No additional story information available for this artwork.'}
+                </p>
+              </div>
+            )}
+          </div>
 
           {/* Details grid */}
           <div className="grid grid-cols-2 gap-4">
