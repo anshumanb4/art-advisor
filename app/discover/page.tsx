@@ -112,11 +112,11 @@ export default function DiscoverPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-white">
-        <p className="text-red-500 mb-4">{error}</p>
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-neutral-900">
+        <p className="text-red-400 mb-4">{error}</p>
         <button
           onClick={() => window.location.reload()}
-          className="px-6 py-3 bg-neutral-900 text-white rounded-xl font-medium"
+          className="px-6 py-3 bg-white text-neutral-900 rounded-xl font-medium"
         >
           Try Again
         </button>
@@ -126,13 +126,13 @@ export default function DiscoverPage() {
 
   if (!currentArtwork) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-white">
-        <p className="text-neutral-600 mb-4">
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-neutral-900">
+        <p className="text-neutral-400 mb-4">
           No more artworks to show
         </p>
         <button
           onClick={handleDone}
-          className="px-6 py-3 bg-neutral-900 text-white rounded-xl font-medium"
+          className="px-6 py-3 bg-white text-neutral-900 rounded-xl font-medium"
         >
           View Results
         </button>
@@ -141,19 +141,19 @@ export default function DiscoverPage() {
   }
 
   return (
-    <main className="min-h-screen flex flex-col bg-white">
+    <main className="h-screen flex flex-col bg-neutral-900 overflow-hidden">
       {/* Header */}
-      <header className="flex items-center justify-between p-4">
+      <header className="flex items-center justify-between p-4 flex-shrink-0">
         <button
           onClick={() => router.push('/')}
-          className="p-2 rounded-full hover:bg-neutral-200 transition-colors"
+          className="p-2 rounded-full hover:bg-neutral-700 transition-colors text-white"
           aria-label="Back to home"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        <span className="text-sm text-neutral-500">
+        <span className="text-sm text-neutral-400">
           {currentIndex + 1} viewed
         </span>
         <div className="w-10" />
@@ -196,7 +196,7 @@ export default function DiscoverPage() {
       </div>
 
       {/* Action buttons */}
-      <div className="p-4 pb-8">
+      <div className="p-4 pb-8 flex-shrink-0">
         <ActionButtons
           onPass={() => handleSwipe(false)}
           onLike={() => handleSwipe(true)}
