@@ -16,7 +16,7 @@ export interface Artwork {
   medium: string
   imageUrl: string
   thumbnailUrl: string
-  source: 'met' | 'artic'
+  source: 'met' | 'artic' | 'cleveland' | 'rijks' | 'harvard' | 'smithsonian'
   sourceUrl: string
   department?: string
   culture?: string

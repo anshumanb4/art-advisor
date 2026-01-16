@@ -3,6 +3,18 @@
 import { useEffect, useState } from 'react'
 import { Artwork } from '@/lib/types'
 
+function getSourceName(source: string): string {
+  const names: Record<string, string> = {
+    met: 'Met Museum',
+    artic: 'Art Institute Chicago',
+    cleveland: 'Cleveland Museum',
+    rijks: 'Rijksmuseum',
+    harvard: 'Harvard Art Museums',
+    smithsonian: 'Smithsonian',
+  }
+  return names[source] || source
+}
+
 interface InfoModalProps {
   artwork: Artwork
   onClose: () => void
@@ -201,7 +213,7 @@ export default function InfoModal({ artwork, onClose }: InfoModalProps) {
             rel="noopener noreferrer"
             className="block w-full py-3 px-4 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-xl font-medium text-center hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors"
           >
-            View on {artwork.source === 'met' ? 'Met Museum' : 'Art Institute Chicago'}
+            View on {getSourceName(artwork.source)}
           </a>
         </div>
       </div>

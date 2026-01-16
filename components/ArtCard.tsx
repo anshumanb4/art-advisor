@@ -8,6 +8,18 @@ interface ArtCardProps {
   priority?: boolean
 }
 
+function getSourceName(source: string): string {
+  const names: Record<string, string> = {
+    met: 'Met Museum',
+    artic: 'Art Institute Chicago',
+    cleveland: 'Cleveland Museum',
+    rijks: 'Rijksmuseum',
+    harvard: 'Harvard Art Museums',
+    smithsonian: 'Smithsonian',
+  }
+  return names[source] || source
+}
+
 export default function ArtCard({ artwork, priority = false }: ArtCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false)
   const [imageError, setImageError] = useState(false)
@@ -71,7 +83,7 @@ export default function ArtCard({ artwork, priority = false }: ArtCardProps) {
       {/* Source badge - top right */}
       <div className="absolute top-4 right-4 z-30">
         <span className="px-3 py-1.5 text-xs font-medium bg-white text-neutral-700 rounded-full shadow-sm border border-neutral-200">
-          {artwork.source === 'met' ? 'Met Museum' : 'Art Institute Chicago'}
+          {getSourceName(artwork.source)}
         </span>
       </div>
     </div>
