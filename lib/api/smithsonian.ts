@@ -149,28 +149,28 @@ export async function searchSmithsonianArtworks(query: string, limit: number = 2
 
     const data: SmithsonianResponse = await response.json()
 
-    return data.response.rows
-      .map(item => {
-        const imageUrl = extractImageUrl(item)
-        if (!imageUrl) return null
+    const artworks: Artwork[] = []
+    for (const item of data.response.rows) {
+      const imageUrl = extractImageUrl(item)
+      if (!imageUrl) continue
 
-        const content = item.content
-        return {
-          id: `smithsonian-${item.id}`,
-          title: item.title || 'Untitled',
-          artist: content.indexedStructured?.name?.[0] || 'Unknown Artist',
-          year: content.indexedStructured?.date?.[0] || 'Date unknown',
-          medium: content.freetext?.physicalDescription?.[0]?.content || 'Unknown medium',
-          imageUrl,
-          thumbnailUrl: imageUrl,
-          source: 'smithsonian' as const,
-          sourceUrl: content.descriptiveNonRepeating?.record_link || `https://www.si.edu/object/${item.id}`,
-          department: UNIT_NAMES[item.unitCode] || 'Smithsonian',
-          culture: content.indexedStructured?.culture?.[0] || undefined,
-          classification: content.indexedStructured?.object_type?.[0] || undefined,
-        }
+      const content = item.content
+      artworks.push({
+        id: `smithsonian-${item.id}`,
+        title: item.title || 'Untitled',
+        artist: content.indexedStructured?.name?.[0] || 'Unknown Artist',
+        year: content.indexedStructured?.date?.[0] || 'Date unknown',
+        medium: content.freetext?.physicalDescription?.[0]?.content || 'Unknown medium',
+        imageUrl,
+        thumbnailUrl: imageUrl,
+        source: 'smithsonian',
+        sourceUrl: content.descriptiveNonRepeating?.record_link || `https://www.si.edu/object/${item.id}`,
+        department: UNIT_NAMES[item.unitCode] || 'Smithsonian',
+        culture: content.indexedStructured?.culture?.[0] || undefined,
+        classification: content.indexedStructured?.object_type?.[0] || undefined,
       })
-      .filter((item): item is Artwork => item !== null)
+    }
+    return artworks
   } catch {
     return []
   }
