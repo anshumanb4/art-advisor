@@ -64,9 +64,13 @@ const SEARCH_QUERIES = [
 ]
 
 export async function fetchRijksArtworks(count: number = 20): Promise<Artwork[]> {
+  // Note: Rijksmuseum has a new API at data.rijksmuseum.nl that doesn't require a key,
+  // but it uses Linked Art format and requires fetching each object individually for images.
+  // The old API at rijksmuseum.nl/api is more efficient but requires an API key.
+  // Get a free key at: https://data.rijksmuseum.nl/object-metadata/api/
   const apiKey = process.env.NEXT_PUBLIC_RIJKS_API_KEY || process.env.RIJKS_API_KEY
   if (!apiKey) {
-    console.warn('RIJKS_API_KEY not set, skipping Rijksmuseum')
+    // Skip silently - other sources will still work
     return []
   }
 
