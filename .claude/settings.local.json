@@ -8,7 +8,23 @@
       "Bash(git commit:*)",
       "Bash(git remote add:*)",
       "Bash(git push:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(npm run dev:*)",
+      "Bash(vercel:*)",
+      "Bash(npm cache clean:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(openssl rand:*)",
+      "Bash(npx prisma db push:*)",
+      "Bash(source .env.local)",
+      "Bash(export DATABASE_URL=\"postgres://5ed6d2953b12d72138393ab965cc7ef8a411cc3d157e8bc1c37b88321304e35b:sk_1xOdBVEECatLWwMamqX0C@db.prisma.io:5432/postgres?sslmode=require\")",
+      "Bash(export DIRECT_URL=\"postgres://5ed6d2953b12d72138393ab965cc7ef8a411cc3d157e8bc1c37b88321304e35b:sk_1xOdBVEECatLWwMamqX0C@db.prisma.io:5432/postgres?sslmode=require\")",
+      "Bash(npx tsc:*)",
+      "WebSearch",
+      "WebFetch(domain:openaccess-api.clevelandart.org)",
+      "WebFetch(domain:data.rijksmuseum.nl)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:api.si.edu)",
+      "WebFetch(domain:www.rijksmuseum.nl)"
     ]
   }
 }

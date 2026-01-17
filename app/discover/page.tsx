@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { Artwork } from '@/lib/types'
-import { fetchArtworks, fetchMoreArtworks } from '@/lib/api/artworks'
 import { addToCollection, addSwipeEvent } from '@/lib/storage'
 import { addToCollectionDB } from '@/lib/actions/collection'
 import { analyzeTaste } from '@/lib/tasteAnalyzer'
@@ -42,13 +41,16 @@ export default function DiscoverPage() {
   const [hasDeclinedSignIn, setHasDeclinedSignIn] = useState(false)
   const [pendingLikeArtwork, setPendingLikeArtwork] = useState<Artwork | null>(null)
 
-  // Fetch initial artworks
+  // Fetch initial artworks via API route (server-side for env vars)
   useEffect(() => {
     async function loadArtworks() {
       try {
         setLoading(true)
         setError(null)
-        const fetched = await fetchArtworks(30)
+        const response = await fetch('/api/artworks?count=30')
+        if (!response.ok) throw new Error('Failed to fetch')
+        const data = await response.json()
+        const fetched: Artwork[] = data.artworks || []
         if (fetched.length === 0) {
           setError('Unable to load artworks. Please try again.')
         } else {
@@ -69,14 +71,22 @@ export default function DiscoverPage() {
   useEffect(() => {
     async function loadMore() {
       if (artworks.length - currentIndex <= 5 && artworks.length > 0) {
-        const more = await fetchMoreArtworks(seenIds, 20)
-        if (more.length > 0) {
-          setArtworks(prev => [...prev, ...more])
-          setSeenIds(prev => {
-            const newSet = new Set(prev)
-            more.forEach(a => newSet.add(a.id))
-            return newSet
-          })
+        try {
+          const idsParam = Array.from(seenIds).join(',')
+          const response = await fetch(`/api/artworks?count=20&existingIds=${encodeURIComponent(idsParam)}`)
+          if (!response.ok) return
+          const data = await response.json()
+          const more: Artwork[] = data.artworks || []
+          if (more.length > 0) {
+            setArtworks(prev => [...prev, ...more])
+            setSeenIds(prev => {
+              const newSet = new Set(prev)
+              more.forEach(a => newSet.add(a.id))
+              return newSet
+            })
+          }
+        } catch {
+          // Silently fail - user can continue with existing artworks
         }
       }
     }

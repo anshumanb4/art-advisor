@@ -29,7 +29,7 @@ export default function ArtCard({ artwork, priority = false }: ArtCardProps) {
       {/* Loading spinner - only shows while loading */}
       {!imageLoaded && !imageError && (
         <div className="absolute inset-0 flex items-center justify-center z-10">
-          <div className="w-10 h-10 border-3 border-neutral-600 border-t-neutral-300 rounded-full animate-spin" />
+          <div className="w-10 h-10 border-4 border-neutral-600 border-t-neutral-300 rounded-full animate-spin" />
         </div>
       )}
 
