@@ -10,6 +10,7 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.71.2",
     "@auth/prisma-adapter": "^2.11.1",
     "@prisma/client": "^5.22.0",
     "googleapis": "^170.0.0",
