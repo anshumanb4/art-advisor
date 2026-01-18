@@ -205,8 +205,8 @@ export default function DiscoverPage() {
   // Keyboard navigation for desktop
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't handle if other modals are open or input is focused
-      if (fullscreenImage || showSignInModal) return
+      // Don't handle if sign-in modal is open or input is focused
+      if (showSignInModal) return
       if (document.activeElement?.tagName === 'INPUT') return
 
       switch (e.key) {
@@ -221,14 +221,33 @@ export default function DiscoverPage() {
           break
         case 'ArrowDown':
           e.preventDefault()
-          if (!infoArtwork) {
+          if (!infoArtwork && !fullscreenImage) {
             handleSwipe(true) // Like
           }
           break
         case 'ArrowRight':
           e.preventDefault()
-          if (!infoArtwork) {
+          if (!infoArtwork && !fullscreenImage) {
             handleSwipe(false) // Reject/pass
+          }
+          break
+        case ' ': // Space bar
+          e.preventDefault()
+          if (fullscreenImage) {
+            setFullscreenImage(null) // Close fullscreen
+          } else if (currentArtwork && !infoArtwork) {
+            setFullscreenImage({
+              src: currentArtwork.imageUrl,
+              alt: `${currentArtwork.title} by ${currentArtwork.artist}`,
+            })
+          }
+          break
+        case 'Escape':
+          e.preventDefault()
+          if (fullscreenImage) {
+            setFullscreenImage(null)
+          } else if (infoArtwork) {
+            setInfoArtwork(null)
           }
           break
       }
