@@ -194,27 +194,32 @@ export default function DiscoverPage() {
   // Keyboard navigation for desktop
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't handle if modal is open or input is focused
-      if (infoArtwork || fullscreenImage || showSignInModal) return
+      // Don't handle if other modals are open or input is focused
+      if (fullscreenImage || showSignInModal) return
       if (document.activeElement?.tagName === 'INPUT') return
 
       switch (e.key) {
-        case 'ArrowDown':
-        case 'ArrowRight':
-          e.preventDefault()
-          handleSwipe(false) // Pass/reject
-          break
         case 'ArrowUp':
-        case 'ArrowLeft':
           e.preventDefault()
-          handleSwipe(true) // Like
+          // Toggle info modal
+          if (infoArtwork) {
+            setInfoArtwork(null)
+          } else if (currentArtwork) {
+            setInfoArtwork(currentArtwork)
+          }
+          break
+        case 'ArrowDown':
+          e.preventDefault()
+          if (!infoArtwork) {
+            handleSwipe(true) // Like
+          }
           break
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [handleSwipe, infoArtwork, fullscreenImage, showSignInModal])
+  }, [handleSwipe, infoArtwork, fullscreenImage, showSignInModal, currentArtwork])
 
   // Handle image tap for fullscreen
   const handleImageTap = useCallback(() => {
