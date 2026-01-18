@@ -214,6 +214,12 @@ export default function DiscoverPage() {
             handleSwipe(true) // Like
           }
           break
+        case 'ArrowRight':
+          e.preventDefault()
+          if (!infoArtwork) {
+            handleSwipe(false) // Reject/pass
+          }
+          break
       }
     }
 
