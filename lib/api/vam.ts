@@ -107,26 +107,26 @@ export async function searchVAMArtworks(query: string, limit: number = 20): Prom
 
     const data: VAMResponse = await response.json()
 
-    return data.records
-      .map(item => {
-        const imageUrl = buildImageUrl(item)
-        if (!imageUrl) return null
+    const artworks: Artwork[] = []
+    for (const item of data.records) {
+      const imageUrl = buildImageUrl(item)
+      if (!imageUrl) continue
 
-        return {
-          id: `vam-${item.systemNumber}`,
-          title: item._primaryTitle || 'Untitled',
-          artist: item._primaryMaker?.name || 'Unknown Artist',
-          year: item._primaryDate || 'Date unknown',
-          medium: item.materialsAndTechniques || 'Unknown medium',
-          imageUrl,
-          thumbnailUrl: item._images?._primary_thumbnail || imageUrl,
-          source: 'vam' as const,
-          sourceUrl: `https://collections.vam.ac.uk/item/${item.systemNumber}`,
-          department: item.objectType || undefined,
-          culture: item._primaryPlace || undefined,
-        }
+      artworks.push({
+        id: `vam-${item.systemNumber}`,
+        title: item._primaryTitle || 'Untitled',
+        artist: item._primaryMaker?.name || 'Unknown Artist',
+        year: item._primaryDate || 'Date unknown',
+        medium: item.materialsAndTechniques || 'Unknown medium',
+        imageUrl,
+        thumbnailUrl: item._images?._primary_thumbnail || imageUrl,
+        source: 'vam',
+        sourceUrl: `https://collections.vam.ac.uk/item/${item.systemNumber}`,
+        department: item.objectType || undefined,
+        culture: item._primaryPlace || undefined,
       })
-      .filter((item): item is Artwork => item !== null)
+    }
+    return artworks
   } catch {
     return []
   }
