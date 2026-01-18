@@ -127,26 +127,26 @@ export async function searchEuropeanaArtworks(query: string, limit: number = 20)
 
     if (!data.items) return []
 
-    return data.items
-      .map(item => {
-        const imageUrl = getImageUrl(item)
-        if (!imageUrl) return null
+    const artworks: Artwork[] = []
+    for (const item of data.items) {
+      const imageUrl = getImageUrl(item)
+      if (!imageUrl) continue
 
-        return {
-          id: `europeana-${item.id.replace(/\//g, '-')}`,
-          title: item.title?.[0] || 'Untitled',
-          artist: getArtist(item),
-          year: item.year?.[0] || 'Date unknown',
-          medium: item.dcFormat?.[0] || 'Unknown medium',
-          imageUrl,
-          thumbnailUrl: item.edmPreview?.[0] || imageUrl,
-          source: 'europeana' as const,
-          sourceUrl: item.edmIsShownAt?.[0] || `https://www.europeana.eu/item${item.id}`,
-          department: item.dataProvider?.[0] || undefined,
-          culture: item.country?.[0] || undefined,
-        }
+      artworks.push({
+        id: `europeana-${item.id.replace(/\//g, '-')}`,
+        title: item.title?.[0] || 'Untitled',
+        artist: getArtist(item),
+        year: item.year?.[0] || 'Date unknown',
+        medium: item.dcFormat?.[0] || 'Unknown medium',
+        imageUrl,
+        thumbnailUrl: item.edmPreview?.[0] || imageUrl,
+        source: 'europeana',
+        sourceUrl: item.edmIsShownAt?.[0] || `https://www.europeana.eu/item${item.id}`,
+        department: item.dataProvider?.[0] || undefined,
+        culture: item.country?.[0] || undefined,
       })
-      .filter((item): item is Artwork => item !== null)
+    }
+    return artworks
   } catch {
     return []
   }

@@ -1,7 +1,7 @@
 'use client'
 
 import { Artwork } from '@/lib/types'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
 interface ArtCardProps {
   artwork: Artwork
@@ -31,7 +31,6 @@ export default function ArtCard({ artwork, priority = false, onImageError }: Art
   const [imageError, setImageError] = useState(false)
   const [retryCount, setRetryCount] = useState(0)
   const [imageSrc, setImageSrc] = useState(artwork.imageUrl)
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Reset state when artwork changes
   useEffect(() => {
@@ -39,36 +38,38 @@ export default function ArtCard({ artwork, priority = false, onImageError }: Art
     setImageError(false)
     setRetryCount(0)
     setImageSrc(artwork.imageUrl)
+  }, [artwork.id, artwork.imageUrl])
 
-    // Set a timeout - if image doesn't load in 10s, retry or fail
-    timeoutRef.current = setTimeout(() => {
-      if (!imageLoaded && !imageError) {
-        handleImageError()
-      }
-    }, 10000)
-
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current)
-    }
-  }, [artwork.id])
-
-  const handleImageError = () => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current)
-
-    if (retryCount < MAX_RETRIES) {
-      // Retry with cache-busting parameter
-      setRetryCount(prev => prev + 1)
-      setImageSrc(`${artwork.imageUrl}${artwork.imageUrl.includes('?') ? '&' : '?'}retry=${retryCount + 1}`)
-    } else {
+  // Handle retry when retryCount changes
+  useEffect(() => {
+    if (retryCount > 0 && retryCount <= MAX_RETRIES) {
+      setImageSrc(`${artwork.imageUrl}${artwork.imageUrl.includes('?') ? '&' : '?'}retry=${retryCount}`)
+    } else if (retryCount > MAX_RETRIES) {
       setImageError(true)
       onImageError?.()
     }
-  }
+  }, [retryCount, artwork.imageUrl, onImageError])
 
-  const handleImageLoad = () => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current)
+  // Timeout to trigger retry if image takes too long
+  useEffect(() => {
+    if (imageLoaded || imageError) return
+
+    const timeout = setTimeout(() => {
+      if (!imageLoaded && !imageError) {
+        setRetryCount(prev => prev + 1)
+      }
+    }, 10000)
+
+    return () => clearTimeout(timeout)
+  }, [imageSrc, imageLoaded, imageError])
+
+  const handleImageError = useCallback(() => {
+    setRetryCount(prev => prev + 1)
+  }, [])
+
+  const handleImageLoad = useCallback(() => {
     setImageLoaded(true)
-  }
+  }, [])
 
   return (
     <div className="relative w-full h-full bg-neutral-800 rounded-2xl overflow-hidden shadow-xl">
@@ -114,7 +115,6 @@ export default function ArtCard({ artwork, priority = false, onImageError }: Art
           onLoad={handleImageLoad}
           onError={handleImageError}
           referrerPolicy="no-referrer"
-          crossOrigin="anonymous"
         />
       )}
 
