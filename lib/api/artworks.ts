@@ -5,6 +5,9 @@ import { fetchClevelandArtworks } from './cleveland'
 import { fetchRijksArtworks } from './rijks'
 import { fetchHarvardArtworks } from './harvard'
 import { fetchSmithsonianArtworks } from './smithsonian'
+import { fetchVAMArtworks } from './vam'
+import { fetchEuropeanaArtworks } from './europeana'
+import { fetchNYPLArtworks } from './nypl'
 
 function shuffleArray<T>(array: T[]): T[] {
   const shuffled = [...array]
@@ -27,14 +30,15 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 
 export async function fetchArtworks(count: number = 50): Promise<Artwork[]> {
   // Fetch from fast sources first (no API key needed, typically faster)
-  const perFastSource = Math.ceil(count / 3)
-  const perSlowSource = Math.ceil(count / 6)
+  const perFastSource = Math.ceil(count / 4) // 4 fast sources now
+  const perSlowSource = Math.ceil(count / 5) // 5 slow sources
 
   // Fast sources (no API key) with 5s timeout
   const fastSources = [
     withTimeout(fetchMetArtworks(perFastSource), 5000),
     withTimeout(fetchArticArtworks(perFastSource, Math.floor(Math.random() * 100) + 1), 5000),
     withTimeout(fetchClevelandArtworks(perFastSource), 5000),
+    withTimeout(fetchVAMArtworks(perFastSource), 5000), // V&A doesn't need API key
   ]
 
   // Slow sources (need API key) with 8s timeout
@@ -42,6 +46,8 @@ export async function fetchArtworks(count: number = 50): Promise<Artwork[]> {
     withTimeout(fetchRijksArtworks(perSlowSource), 8000),
     withTimeout(fetchHarvardArtworks(perSlowSource), 8000),
     withTimeout(fetchSmithsonianArtworks(perSlowSource), 8000),
+    withTimeout(fetchEuropeanaArtworks(perSlowSource), 8000),
+    withTimeout(fetchNYPLArtworks(perSlowSource), 10000), // NYPL needs more time (multiple API calls)
   ]
 
   // Get fast sources first, don't wait for slow ones
@@ -76,16 +82,19 @@ export async function fetchMoreArtworks(
   count: number = 20
 ): Promise<Artwork[]> {
   // Fetch more artworks, excluding ones we've already seen
-  const perSource = Math.ceil(count / 6)
+  const perSource = Math.ceil(count / 9) // 9 sources total
   const randomPage = Math.floor(Math.random() * 100) + 1
 
   const results = await Promise.allSettled([
-    fetchMetArtworks(perSource),
-    fetchArticArtworks(perSource, randomPage),
-    fetchClevelandArtworks(perSource),
-    fetchRijksArtworks(perSource),
-    fetchHarvardArtworks(perSource),
-    fetchSmithsonianArtworks(perSource),
+    withTimeout(fetchMetArtworks(perSource), 5000),
+    withTimeout(fetchArticArtworks(perSource, randomPage), 5000),
+    withTimeout(fetchClevelandArtworks(perSource), 5000),
+    withTimeout(fetchVAMArtworks(perSource), 5000),
+    withTimeout(fetchRijksArtworks(perSource), 8000),
+    withTimeout(fetchHarvardArtworks(perSource), 8000),
+    withTimeout(fetchSmithsonianArtworks(perSource), 8000),
+    withTimeout(fetchEuropeanaArtworks(perSource), 8000),
+    withTimeout(fetchNYPLArtworks(perSource), 10000),
   ])
 
   const newArtworks: Artwork[] = []

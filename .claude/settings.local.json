@@ -24,7 +24,15 @@
       "WebFetch(domain:data.rijksmuseum.nl)",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:api.si.edu)",
-      "WebFetch(domain:www.rijksmuseum.nl)"
+      "WebFetch(domain:www.rijksmuseum.nl)",
+      "WebFetch(domain:apidocs.cooperhewitt.org)",
+      "WebFetch(domain:pro.dp.la)",
+      "WebFetch(domain:developers.artsy.net)",
+      "WebFetch(domain:developers.vam.ac.uk)",
+      "WebFetch(domain:apis.europeana.eu)",
+      "WebFetch(domain:api.repo.nypl.org)",
+      "WebFetch(domain:www.si.edu)",
+      "WebFetch(domain:api.vam.ac.uk)"
     ]
   }
 }

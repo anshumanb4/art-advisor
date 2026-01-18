@@ -17,6 +17,9 @@ function getSourceName(source: string): string {
     rijks: 'Rijksmuseum',
     harvard: 'Harvard Art Museums',
     smithsonian: 'Smithsonian',
+    vam: 'V&A Museum',
+    europeana: 'Europeana',
+    nypl: 'NYPL',
   }
   return names[source] || source
 }
