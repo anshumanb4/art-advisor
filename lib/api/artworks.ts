@@ -15,25 +15,56 @@ function shuffleArray<T>(array: T[]): T[] {
   return shuffled
 }
 
-export async function fetchArtworks(count: number = 50): Promise<Artwork[]> {
-  // Fetch from all sources in parallel
-  // Each source contributes a portion of the total
-  const perSource = Math.ceil(count / 6)
-
-  const results = await Promise.allSettled([
-    fetchMetArtworks(perSource),
-    fetchArticArtworks(perSource, Math.floor(Math.random() * 100) + 1),
-    fetchClevelandArtworks(perSource),
-    fetchRijksArtworks(perSource),
-    fetchHarvardArtworks(perSource),
-    fetchSmithsonianArtworks(perSource),
+// Wrapper to add timeout to fetch calls
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error('Timeout')), ms)
+    ),
   ])
+}
 
-  // Combine successful results
+export async function fetchArtworks(count: number = 50): Promise<Artwork[]> {
+  // Fetch from fast sources first (no API key needed, typically faster)
+  const perFastSource = Math.ceil(count / 3)
+  const perSlowSource = Math.ceil(count / 6)
+
+  // Fast sources (no API key) with 5s timeout
+  const fastSources = [
+    withTimeout(fetchMetArtworks(perFastSource), 5000),
+    withTimeout(fetchArticArtworks(perFastSource, Math.floor(Math.random() * 100) + 1), 5000),
+    withTimeout(fetchClevelandArtworks(perFastSource), 5000),
+  ]
+
+  // Slow sources (need API key) with 8s timeout
+  const slowSources = [
+    withTimeout(fetchRijksArtworks(perSlowSource), 8000),
+    withTimeout(fetchHarvardArtworks(perSlowSource), 8000),
+    withTimeout(fetchSmithsonianArtworks(perSlowSource), 8000),
+  ]
+
+  // Get fast sources first, don't wait for slow ones
+  const fastResults = await Promise.allSettled(fastSources)
+
   const combined: Artwork[] = []
-  for (const result of results) {
+  for (const result of fastResults) {
     if (result.status === 'fulfilled') {
       combined.push(...result.value)
+    }
+  }
+
+  // If we have enough from fast sources, fetch slow ones in background
+  if (combined.length >= 10) {
+    // Fire and forget - slow sources will be available on next fetch
+    Promise.allSettled(slowSources).catch(() => {})
+  } else {
+    // Wait for slow sources if we don't have enough
+    const slowResults = await Promise.allSettled(slowSources)
+    for (const result of slowResults) {
+      if (result.status === 'fulfilled') {
+        combined.push(...result.value)
+      }
     }
   }
 

@@ -54,6 +54,17 @@ export default function DiscoverPage() {
         if (fetched.length === 0) {
           setError('Unable to load artworks. Please try again.')
         } else {
+          // Preload first image before showing content
+          if (fetched[0]?.imageUrl) {
+            await new Promise<void>((resolve) => {
+              const img = new Image()
+              img.onload = () => resolve()
+              img.onerror = () => resolve() // Continue even if preload fails
+              img.src = fetched[0].imageUrl
+              // Timeout after 3s to not block too long
+              setTimeout(resolve, 3000)
+            })
+          }
           setArtworks(fetched)
           setSeenIds(new Set(fetched.map(a => a.id)))
         }
