@@ -191,6 +191,31 @@ export default function DiscoverPage() {
     }
   }, [currentArtwork])
 
+  // Keyboard navigation for desktop
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't handle if modal is open or input is focused
+      if (infoArtwork || fullscreenImage || showSignInModal) return
+      if (document.activeElement?.tagName === 'INPUT') return
+
+      switch (e.key) {
+        case 'ArrowDown':
+        case 'ArrowRight':
+          e.preventDefault()
+          handleSwipe(false) // Pass/reject
+          break
+        case 'ArrowUp':
+        case 'ArrowLeft':
+          e.preventDefault()
+          handleSwipe(true) // Like
+          break
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [handleSwipe, infoArtwork, fullscreenImage, showSignInModal])
+
   // Handle image tap for fullscreen
   const handleImageTap = useCallback(() => {
     if (currentArtwork) {
