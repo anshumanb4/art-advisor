@@ -267,6 +267,12 @@ export default function DiscoverPage() {
     }
   }, [currentArtwork])
 
+  // Auto-skip to next artwork if image fails to load after retries
+  const handleImageError = useCallback(() => {
+    // Silently skip to next artwork - don't count as a swipe
+    setCurrentIndex(prev => prev + 1)
+  }, [])
+
   if (loading) {
     return <LoadingSpinner message="Curating artworks for you..." />
   }
@@ -331,6 +337,7 @@ export default function DiscoverPage() {
             <ArtCard
               artwork={currentArtwork}
               priority
+              onImageError={handleImageError}
             />
           </SwipeableCard>
 

@@ -1,11 +1,12 @@
 'use client'
 
 import { Artwork } from '@/lib/types'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 interface ArtCardProps {
   artwork: Artwork
   priority?: boolean
+  onImageError?: () => void // Callback when image fails after retries
 }
 
 function getSourceName(source: string): string {
@@ -20,9 +21,51 @@ function getSourceName(source: string): string {
   return names[source] || source
 }
 
-export default function ArtCard({ artwork, priority = false }: ArtCardProps) {
+const MAX_RETRIES = 2
+
+export default function ArtCard({ artwork, priority = false, onImageError }: ArtCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false)
   const [imageError, setImageError] = useState(false)
+  const [retryCount, setRetryCount] = useState(0)
+  const [imageSrc, setImageSrc] = useState(artwork.imageUrl)
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Reset state when artwork changes
+  useEffect(() => {
+    setImageLoaded(false)
+    setImageError(false)
+    setRetryCount(0)
+    setImageSrc(artwork.imageUrl)
+
+    // Set a timeout - if image doesn't load in 10s, retry or fail
+    timeoutRef.current = setTimeout(() => {
+      if (!imageLoaded && !imageError) {
+        handleImageError()
+      }
+    }, 10000)
+
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    }
+  }, [artwork.id])
+
+  const handleImageError = () => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current)
+
+    if (retryCount < MAX_RETRIES) {
+      // Retry with cache-busting parameter
+      setRetryCount(prev => prev + 1)
+      setImageSrc(`${artwork.imageUrl}${artwork.imageUrl.includes('?') ? '&' : '?'}retry=${retryCount + 1}`)
+    } else {
+      setImageError(true)
+      onImageError?.()
+    }
+  }
+
+  const handleImageLoad = () => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    setImageLoaded(true)
+  }
 
   return (
     <div className="relative w-full h-full bg-neutral-800 rounded-2xl overflow-hidden shadow-xl">
@@ -59,14 +102,16 @@ export default function ArtCard({ artwork, priority = false }: ArtCardProps) {
       {!imageError && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={artwork.imageUrl}
+          key={imageSrc} // Force re-render on retry
+          src={imageSrc}
           alt={`${artwork.title} by ${artwork.artist}`}
           className="absolute inset-0 w-full h-full object-contain"
           style={{ opacity: imageLoaded ? 1 : 0 }}
           loading={priority ? 'eager' : 'lazy'}
-          onLoad={() => setImageLoaded(true)}
-          onError={() => setImageError(true)}
+          onLoad={handleImageLoad}
+          onError={handleImageError}
           referrerPolicy="no-referrer"
+          crossOrigin="anonymous"
         />
       )}
 
