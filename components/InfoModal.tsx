@@ -15,6 +15,20 @@ function getSourceName(source: string): string {
   return names[source] || source
 }
 
+// Safely convert any value to a displayable string
+function toDisplayString(value: unknown): string | null {
+  if (!value) return null
+  if (typeof value === 'string') return value
+  if (typeof value === 'object') {
+    // Handle objects like {unframed: "...", framed: "..."}
+    const entries = Object.entries(value as Record<string, unknown>)
+      .filter(([, v]) => v && typeof v === 'string')
+      .map(([k, v]) => `${k}: ${v}`)
+    return entries.length > 0 ? entries.join('; ') : null
+  }
+  return String(value)
+}
+
 interface InfoModalProps {
   artwork: Artwork
   onClose: () => void
@@ -152,56 +166,56 @@ export default function InfoModal({ artwork, onClose }: InfoModalProps) {
               </div>
             )}
 
-            {artwork.dimensions && (
+            {toDisplayString(artwork.dimensions) && (
               <div>
                 <h4 className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-1">
                   Dimensions
                 </h4>
                 <p className="text-sm text-neutral-700 dark:text-neutral-300">
-                  {artwork.dimensions}
+                  {toDisplayString(artwork.dimensions)}
                 </p>
               </div>
             )}
 
-            {artwork.classification && (
+            {toDisplayString(artwork.classification) && (
               <div>
                 <h4 className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-1">
                   Classification
                 </h4>
                 <p className="text-sm text-neutral-700 dark:text-neutral-300">
-                  {artwork.classification}
+                  {toDisplayString(artwork.classification)}
                 </p>
               </div>
             )}
 
-            {artwork.culture && (
+            {toDisplayString(artwork.culture) && (
               <div>
                 <h4 className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-1">
                   Origin
                 </h4>
                 <p className="text-sm text-neutral-700 dark:text-neutral-300">
-                  {artwork.culture}
+                  {toDisplayString(artwork.culture)}
                 </p>
               </div>
             )}
 
-            {artwork.department && (
+            {toDisplayString(artwork.department) && (
               <div>
                 <h4 className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-1">
                   Department
                 </h4>
                 <p className="text-sm text-neutral-700 dark:text-neutral-300">
-                  {artwork.department}
+                  {toDisplayString(artwork.department)}
                 </p>
               </div>
             )}
           </div>
 
           {/* Credit line */}
-          {artwork.creditLine && (
+          {toDisplayString(artwork.creditLine) && (
             <div className="pt-2 border-t border-neutral-200 dark:border-neutral-800">
               <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                {artwork.creditLine}
+                {toDisplayString(artwork.creditLine)}
               </p>
             </div>
           )}
